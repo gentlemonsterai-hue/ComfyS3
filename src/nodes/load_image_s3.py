@@ -10,13 +10,9 @@ S3_INSTANCE = get_s3_instance()
 class LoadImageS3:
     @classmethod
     def INPUT_TYPES(s):
-        input_dir = os.getenv("S3_INPUT_DIR")
-        try:
-            files = S3_INSTANCE.get_files(prefix=input_dir)
-        except Exception as e:
-            files = []
+        # input 을 url string 으로 받도록 처리
         return {"required":
-                    {"image": (sorted(files), {"image_upload": False})},
+                    {"image": ("STRING", {"default": "", "multiline": False})},
                 }
     
     CATEGORY = "ComfyS3"
@@ -24,9 +20,13 @@ class LoadImageS3:
     FUNCTION = "load_image"
     
     def load_image(self, image):
-        s3_path = os.path.join(os.getenv("S3_INPUT_DIR"), image)
-        image_path = S3_INSTANCE.download_file(s3_path=s3_path, local_path=f"input/{image}")
-        
+         # 슬래시 제거 (앞의 / 제거)
+        image_clean = image.lstrip('/')
+
+        s3_path = os.path.join(os.getenv("S3_INPUT_DIR"), image_clean)
+
+        image_path = S3_INSTANCE.download_file(s3_path=s3_path, local_path=f"input/{image_clean}")
+
         img = Image.open(image_path)
         output_images = []
         output_masks = []
